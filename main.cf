@@ -1,0 +1,216 @@
+# Name        : postfix
+# Version     : 2.10.1
+# Release     : 7.el7
+# Summary     : Postfix Mail Transport Agent
+# URL         : http://www.postfix.org, https://www.postfix.org/documentation.html
+# License     : IBM and GPLv2+
+# Description : Postfix is a Mail Transport Agent (MTA), supporting LDAP, SMTP AUTH (SASL)
+
+smtpd_banner = $myhostname ESMTP
+mynetworks_style = host
+mynetworks =
+        127.0.0.0/8
+        [::1]/128
+
+smtpd_tls_auth_only = no
+smtp_use_tls = yes
+smtpd_use_tls = yes
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_type = cyrus
+smtpd_sasl_path = smtpd
+smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+smtp_sasl_mechanism_filter = !gssapi, !login, static:all
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_tls_security_options = noanonymous
+
+local_recipient_maps =
+smtp_tls_note_starttls_offer = yes
+smtpd_tls_cert_file = /etc/letsencrypt/live/mail.some.org/fullchain.pem
+smtpd_tls_key_file = /etc/letsencrypt/live/mail.some.org/privkey.pem
+smtpd_tls_CAfile = /etc/letsencrypt/live/mail.some.org/cert.pem
+smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.trust.crt
+smtp_tls_CApath = /etc/pki/tls/certs
+smtpd_tls_CApath = /etc/pki/tls/certs
+smtpd_tls_received_header = yes
+smtpd_tls_session_cache_timeout = 3600s
+tls_random_source = dev:/dev/urandom
+# TLS protocols accepted by Postfix (Outgoing)
+smtp_tls_protocols = !SSLv2, !SSLv3
+smtp_tls_mandatory_protocols = !SSLv2, !SSLv3
+# TLS supported ciphers (Outgoing)
+smtp_tls_ciphers = high
+smtp_tls_mandatory_ciphers = high
+# Uses TLS if this is supported by the receiving SMTP server
+smtp_tls_security_level = may
+# Enable additional Postfix SMTP server logging of TLS activity
+smtp_tls_loglevel = 1
+# TLS protocols accepted by Postfix (Incoming)
+smtpd_tls_protocols = !SSLv2, !SSLv3
+smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3
+# TLS supported ciphers (Incoming)
+smtpd_tls_ciphers = high
+smtpd_tls_mandatory_ciphers = high
+# Uses TLS if this is supported by the sending SMTP server, otherwise use plaintext
+smtpd_tls_security_level = may
+# Enable additional Postfix SMTP server logging of TLS activity
+smtpd_tls_loglevel = 1
+tls_high_cipherlist = !aNULL:!eNULL:!CAMELLIA:HIGH:@STRENGTH
+
+myhostname = mail.some.org
+mydomain = localhost
+mydestination = $myhostname localhost.$mydomain localhost
+myorigin = $myhostname
+
+### Restrictions
+disable_vrfy_command = yes
+smtpd_delay_reject = yes
+smtpd_helo_required = yes
+smtpd_helo_restrictions =
+        permit_mynetworks,
+        permit_sasl_authenticated,
+        check_helo_access hash:/etc/postfix/helo_access,
+        reject_non_fqdn_hostname,
+        reject_non_fqdn_helo_hostname,
+        reject_invalid_helo_hostname,
+        permit
+        
+smtpd_sender_restrictions =
+smtpd_client_restrictions = permit_mynetworks,
+        check_helo_access hash:/etc/postfix/helo_access,
+        check_client_access hash:/etc/postfix/client_access,
+        permit_sasl_authenticated,
+        reject_non_fqdn_sender,
+        reject_unauth_pipelining,
+        reject_unknown_sender_domain,
+        reject_unknown_hostname,
+        reject_unknown_client,
+        reject_invalid_hostname,
+        reject_rbl_client b.barracudacentral.org,
+        reject_rbl_client ix.dnsbl.manitu.net,
+        reject_rbl_client bl.spamcop.net,
+        reject_rbl_client zen.spamhaus.org,
+        reject_rbl_client dnsbl.sorbs.net=127.0.0.[2..4],
+        reject_rbl_client dnsbl.sorbs.net=127.0.0.7,
+        reject_rbl_client dnsbl.sorbs.net=127.0.0.9,
+        reject_rbl_client dnsbl.sorbs.net=127.0.0.12,
+        reject_rbl_client dnsbl.sorbs.net=127.0.0.[14..15],
+        reject_rbl_client uribl.swinog.ch,
+        reject_rbl_client wormrbl.imp.ch,
+        reject_rbl_client bl.spamcannibal.org,
+        reject_rbl_client bl.0spam.org,
+        reject_rbl_client psbl.surriel.com,
+        reject_rbl_client hostkarma.junkemailfilter.com=127.0.0.2,
+        reject_rhsbl_sender hostkarma.junkemailfilter.com=127.0.0.2,
+        reject_rhsbl_sender dsn.rfc-ignorant.org,
+        permit
+        
+smtpd_data_restrictions =
+        reject_unauth_pipelining
+        
+policyd-spf_time_limit = 3600
+smtpd_recipient_restrictions = permit_mynetworks,
+        permit_sasl_authenticated,
+        check_helo_access hash:/etc/postfix/helo_access,
+        check_sender_access hash:/etc/postfix/sender_access,
+        check_sender_access hash:/etc/postfix/check_backscatterer,
+        check_recipient_access hash:/etc/postfix/recipient_access,
+        reject_invalid_helo_hostname,
+        reject_non_fqdn_recipient,
+        reject_unknown_recipient_domain,
+        reject_unauth_pipelining,
+        reject_unauth_destination,
+        check_policy_service unix:private/policyd-spf,
+        reject_rbl_client zen.spamhaus.org=127.0.0.[2..11],
+        reject_rhsbl_sender dbl.spamhaus.org=127.0.1.[2..99],
+        reject_rhsbl_helo dbl.spamhaus.org=127.0.1.[2..99],
+        reject_rhsbl_reverse_client dbl.spamhaus.org=127.0.1.[2..99],
+        warn_if_reject reject_rbl_client zen.spamhaus.org=127.255.255.[1..255],
+        permit_rhswl_client hostkarma.junkemailfilter.com=127.0.0.1,
+        permit_dnswl_client hostkarma.junkemailfilter.com=127.0.0.1,
+        reject_rbl_client cbl.abuseat.org,
+        reject_rbl_client multi.surbl.org,
+        reject_rbl_client rbl.interserver.net,
+        reject_rbl_client dsn.rfc-ignorant.org,
+        reject_rbl_client bl.mailspike.net=127.0.0.[10..11],
+        reject_rbl_client truncate.gbudb.net,
+        reject_rbl_client dnsbl-1.uceprotect.net,
+        reject_rbl_client dnsbl-2.uceprotect.net,
+        reject_rbl_client dnsbl-3.uceprotect.net,
+        reject_rbl_client spam.dnsbl.anonmails.de,
+        reject_rbl_client dnsrbl.imp.ch,
+        reject_rbl_client bl.nordspam.com,
+        reject_rbl_client bl.blocklist.de,
+        reject_rbl_client bogons.cymru.com,
+        reject_rbl_client mail-abuse.blacklist.jippg.org,
+        reject_rbl_client dnsbl.kempt.net=127.0.0.2,
+        reject_rbl_client db.wpbl.info=127.0.0.2,
+        check_policy_service unix:postgrey/socket,
+        reject_unverified_recipient,
+        permit
+        
+notify_classes = resource, software
+
+strict_rfc821_envelopes = yes
+biff = no
+unknown_address_reject_code  = 554
+unknown_hostname_reject_code = 554
+unknown_client_reject_code   = 554
+#unknown_local_recipient_reject_code = 554
+unknown_local_recipient_reject_code = 550
+unverified_sender_reject_code = 550
+
+content_filter=smtp-amavis:[127.0.0.1]:10024
+
+# DKIM milter
+smtpd_milters = inet:127.0.0.1:8899
+non_smtpd_milters = $smtpd_milters
+milter_default_action = accept
+milter_protocol = 2
+
+transport_maps = hash:/etc/postfix/transport
+
+alias_maps = hash:/etc/aliases
+alias_database = $alias_maps
+local_recipient_maps = $alias_maps
+virtual_alias_maps = hash:/etc/postfix/virtual
+
+virtual_alias_domains =
+relay_domains = foo.org example.net example.com
+
+header_checks = regexp:/etc/postfix/header_checks
+mime_header_checks = pcre:/etc/postfix/mime_header_check
+body_checks = regexp:/etc/postfix/body_checks
+undisclosed_recipients_header = To: (undisclosed recipients)
+
+mailbox_size_limit = 0
+# The maximal size in bytes of a message, including 30 percent envelope information.
+# 104857600 is 100 (MB) x 1024 (KB) x 1024 (Byte)
+message_size_limit = 0
+maximal_queue_lifetime = 1d
+bounce_queue_lifetime = 1d
+delay_warning_time = 0h
+resolve_dequoted_address = no
+
+queue_directory = /var/spool/postfix
+command_directory = /usr/sbin
+daemon_directory = /usr/libexec/postfix
+data_directory = /var/lib/postfix
+mail_owner = postfix
+
+inet_interfaces = all
+inet_protocols = ipv4
+
+debug_peer_level = 2
+debugger_command =
+         PATH=/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin
+         ddd $daemon_directory/$process_name $process_id & sleep 5
+
+sendmail_path = /usr/sbin/sendmail.postfix
+
+newaliases_path = /usr/bin/newaliases.postfix
+mailq_path = /usr/bin/mailq.postfix
+setgid_group = postdrop
+html_directory = no
+manpage_directory = /usr/share/man
+sample_directory = /usr/share/doc/postfix-2.10.1/samples
+readme_directory = /usr/share/doc/postfix-2.10.1/README_FILES
