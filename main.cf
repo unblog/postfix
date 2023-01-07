@@ -4,7 +4,7 @@
 # Summary     : Postfix Mail Transport Agent
 # URL         : http://www.postfix.org, https://www.postfix.org/documentation.html
 # License     : IBM and GPLv2+
-# Description : Postfix is a Mail Transport Agent (MTA), supporting LDAP, SMTP AUTH (SASL)
+# Description : Postfix is a Mail Transport Agent (MTA), supporting LDAP, SMTP AUTH (SASL).
 
 smtpd_banner = $myhostname ESMTP
 mynetworks_style = host
