@@ -1,6 +1,5 @@
 # Name        : postfix
-# Version     : 2.10.1
-# Release     : 7.el7
+# Version     : 3.4.23
 # Summary     : Postfix Mail Transport Agent
 # URL         : http://www.postfix.org, https://www.postfix.org/documentation.html
 # License     : IBM and GPLv2+
@@ -65,8 +64,7 @@ myorigin = $myhostname
 disable_vrfy_command = yes
 smtpd_delay_reject = yes
 smtpd_helo_required = yes
-smtpd_helo_restrictions =
-        permit_mynetworks,
+smtpd_helo_restrictions = permit_mynetworks,
         permit_sasl_authenticated,
         check_helo_access hash:/etc/postfix/helo_access,
         reject_non_fqdn_hostname,
@@ -88,23 +86,20 @@ smtpd_client_restrictions = permit_mynetworks,
         reject_rbl_client b.barracudacentral.org,
         reject_rbl_client ix.dnsbl.manitu.net,
         reject_rbl_client bl.spamcop.net,
-        reject_rbl_client dnsbl.sorbs.net=127.0.0.[2..4],
+        reject_rbl_client dnsbl.sorbs.net=127.0.0.2,
+        reject_rbl_client dnsbl.sorbs.net=127.0.0.[3..4],
         reject_rbl_client dnsbl.sorbs.net=127.0.0.7,
         reject_rbl_client dnsbl.sorbs.net=127.0.0.9,
         reject_rbl_client dnsbl.sorbs.net=127.0.0.12,
         reject_rbl_client dnsbl.sorbs.net=127.0.0.[14..15],
         reject_rbl_client uribl.swinog.ch,
         reject_rbl_client wormrbl.imp.ch,
-        reject_rbl_client bl.spamcannibal.org,
-        reject_rbl_client bl.0spam.org=127.0.0.[7..9],
-        reject_rbl_client psbl.surriel.com,
         reject_rbl_client hostkarma.junkemailfilter.com=127.0.0.2,
         reject_rhsbl_sender hostkarma.junkemailfilter.com=127.0.0.2,
         reject_rhsbl_sender dsn.rfc-ignorant.org,
         permit
         
-smtpd_data_restrictions =
-        reject_unauth_pipelining
+smtpd_data_restrictions = reject_unauth_pipelining
         
 policyd-spf_time_limit = 3600
 smtpd_recipient_restrictions = permit_mynetworks,
@@ -128,9 +123,11 @@ smtpd_recipient_restrictions = permit_mynetworks,
         permit_dnswl_client hostkarma.junkemailfilter.com=127.0.0.1,
         reject_rbl_client cbl.abuseat.org,
         reject_rbl_client multi.surbl.org,
+        reject_rbl_client psbl.surriel.com,
         reject_rbl_client rbl.interserver.net,
         reject_rbl_client dsn.rfc-ignorant.org,
         reject_rbl_client bl.mailspike.net=127.0.0.[10..11],
+        reject_rbl_client bl.0spam.org=127.0.0.[7..9],
         reject_rbl_client truncate.gbudb.net,
         reject_rbl_client dnsbl-1.uceprotect.net,
         reject_rbl_client spam.dnsbl.anonmails.de,
